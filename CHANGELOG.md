@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-13
+
 ### Added
 
 - Sign-in to the OCEA Smart Building resident portal with its e-mail and
@@ -25,4 +27,5 @@ the notes of the version's GitHub Release.
   month, per fluid.
 - Texts in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-ocea/commits/main
+[Unreleased]: https://github.com/guim31/gladys-ocea/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-ocea/releases/tag/v1.0.1
