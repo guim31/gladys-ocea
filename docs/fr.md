@@ -50,7 +50,9 @@ Les compteurs OCEA envoient leur index une fois, ou quelques fois, par jour.
 L'intégration lit le portail **toutes les 6 heures par défaut**, au plus
 toutes les heures : lire plus souvent n'apporte pas de donnée plus fraîche et
 ne fait que charger le portail. Le dernier relevé est conservé : redémarrer
-Gladys ne relit pas OCEA avant la fin de l'intervalle.
+Gladys ne relit pas OCEA avant la fin de l'intervalle. Une valeur qui ne change pas est tout de même renvoyée
+à Gladys au moins toutes les 12 heures, pour que « Pas de valeur récente » ne
+s'affiche jamais.
 
 ## Graphiques et suivi d'énergie
 
@@ -96,4 +98,7 @@ volume `/data`, et n'écrit jamais d'identifiant ni de jeton dans ses logs.
   attendant, pour ne jamais bloquer votre compte.
 - **« Le portail OCEA n'a pas répondu »** : OCEA peut être en maintenance.
   L'intégration réessaie dans 30 minutes.
-- Ouvrez l'onglet **Logs** de l'intégration pour voir ce qui s'est passé.
+- Ouvrez l'onglet **Journaux** de l'intégration pour voir ce qui s'est passé.
+  Un relevé normal n'y écrit rien : seuls apparaissent le démarrage, la
+  connexion à OCEA, les erreurs (une ligne quand elles surviennent, une quand
+  tout refonctionne) et vos actions.

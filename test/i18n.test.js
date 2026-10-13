@@ -130,3 +130,28 @@ test('the widget content is localized and fits the vocabulary in every language'
     }
   }
 });
+
+test('the documentation exists in the four languages, with the same sections', () => {
+  const headings = (language) => {
+    const text = readFileSync(new URL(`../docs/${language}.md`, import.meta.url), 'utf8');
+    return { text, levels: [...text.matchAll(/^(#{1,6}) /gm)].map((m) => m[1].length) };
+  };
+  const reference = headings('fr');
+  assert.ok(reference.levels.length >= 5);
+  for (const language of LANGUAGES) {
+    const { text, levels } = headings(language);
+    assert.ok(text.length >= 300, `docs/${language}.md is too short`);
+    assert.deepEqual(levels, reference.levels, `docs/${language}.md: not the sections of fr.md`);
+  }
+  // Same tables and lists too: one line per row or item.
+  const shape = (text) => [...text.matchAll(/^(\||- |\d+\. )/gm)].length;
+  for (const language of LANGUAGES) {
+    assert.equal(
+      shape(headings(language).text),
+      shape(reference.text),
+      `docs/${language}.md shape`,
+    );
+  }
+  assert.doesNotMatch(headings('de').text, POLITE_GERMAN, 'docs/de.md uses the polite form');
+  assert.doesNotMatch(headings('es').text, INFORMAL_SPANISH, 'docs/es.md uses "tú"');
+});

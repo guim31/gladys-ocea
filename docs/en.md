@@ -48,7 +48,8 @@ OCEA meters send their index once, or a few times, a day. The integration
 reads the portal **every 6 hours by default**, at most every hour: reading
 more often brings no fresher data and only loads the portal. The last
 reading is kept, so restarting Gladys does not read OCEA again before the
-interval is over.
+interval is over. An unchanged value is still sent to Gladys at least every
+12 hours, so "No recent value" never shows.
 
 ## Charts and energy monitoring
 
@@ -93,3 +94,6 @@ integration keeps the OCEA session token and the last readings in its own
 - **"The OCEA portal did not answer"**: OCEA may be under maintenance. The
   integration tries again in 30 minutes.
 - Open the **Logs** tab of the integration to see what happened.
+  A normal reading writes nothing there: only the start, the connection to
+  OCEA, errors (one line when they start, one when everything works again)
+  and your actions show.

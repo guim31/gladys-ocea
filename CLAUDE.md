@@ -230,5 +230,14 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 Tout texte montré à l'utilisateur existe en **`en`, `fr`, `de` et `es`** : manifeste, contenu des widgets, messages,
 noms de fonctionnalités. L'allemand **tutoie** (« du »), l'espagnol **vouvoie** (« usted ») : décision de Guilhem,
 appliquée à ses 21 intégrations. `test/i18n.test.js` doit échouer sur une langue manquante, un texte vide ou trop
-long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store ne publie que `docs/en.md` et `docs/fr.md`
-(`DOCS_LANGUAGES` d'integration-store) : pas de doc de/es.
+long, et sur un « Sie »/« Ihr… » de politesse en allemand. `docs/en.md` et `docs/fr.md` sont
+obligatoires (`DOCS_LANGUAGES` d'integration-store) ; depuis Gladys 5.2, le store publie aussi `docs/de.md` et
+`docs/es.md` quand ils existent (`DOCS_OPTIONAL_LANGUAGES`). Les quatre docs ont les mêmes sections, même tutoiement
+et vouvoiement, vocabulaire de l'interface (`front/src/config/i18n/*.json` du cœur) ; `test/i18n.test.js` le vérifie.
+
+### Journaux (depuis le 13/10/2026)
+
+Rien au niveau info pour un cycle normal de lecture : l'info ne garde que le cycle de vie (démarrage, connexion,
+perte et retour, erreurs utiles) et une ligne par action de l'utilisateur. Une erreur qui se répète écrit une ligne
+au premier échec et une au rétablissement. Le reste passe en debug (`LOG_LEVEL=debug`). `test/logs.test.js` le
+vérifie.

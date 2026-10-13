@@ -10,6 +10,19 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+### Added
+
+- The documentation in German and Spanish, published by the store from
+  Gladys 5.2.
+
+### Changed
+
+- Quieter logs: a normal reading writes only at debug level (`LOG_LEVEL=debug`);
+  info keeps the start, the connection to OCEA and the user's actions, and a
+  repeated failure writes one line when it starts and one when it recovers.
+- An unchanged value is sent to Gladys again at least every 12 hours, so the
+  dashboard never shows "No recent value", even with a 24-hour interval.
+
 ## [1.0.1] - 2026-10-13
 
 ### Added
