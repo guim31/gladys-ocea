@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-13
+
 ### Added
 
 - The documentation in German and Spanish, published by the store from
@@ -40,5 +42,6 @@ the notes of the version's GitHub Release.
   month, per fluid.
 - Texts in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-ocea/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/guim31/gladys-ocea/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/guim31/gladys-ocea/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/guim31/gladys-ocea/releases/tag/v1.0.1

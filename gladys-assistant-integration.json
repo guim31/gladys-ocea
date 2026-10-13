@@ -8,8 +8,8 @@
     "de": "Kaltwasser-, Warmwasser- und Heizungsablesungen deines OCEA-Bewohnerportals.",
     "es": "Lecturas de agua fría, agua caliente y calefacción de su espacio de residente OCEA."
   },
-  "version": "1.0.1",
-  "docker_image": "ghcr.io/guim31/gladys-ocea:1.0.1",
+  "version": "1.0.2",
+  "docker_image": "ghcr.io/guim31/gladys-ocea:1.0.2",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-ocea/main/cover.png",
   "categories": ["energy"],
