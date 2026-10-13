@@ -1,30 +1,27 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
+// Integration configuration, filled in by the user from the `config_schema`
+// of `gladys-assistant-integration.json`.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// This module provides the defaults and normalizes the received object, so
+// the rest of the code never deals with `undefined` or with strings sent by
+// a form.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+import { DEFAULT_LANGUAGE, LANGUAGES } from './i18n.js';
+
+export const MIN_REFRESH_HOURS = 1;
+export const MAX_REFRESH_HOURS = 24;
+
+// Defaults: they MUST match the `default` values of the manifest.
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  email: '',
+  // A `secret` field has no default in the manifest.
+  password: '',
+  // OCEA meters report once or a few times a day: every 6 hours is plenty.
+  refresh_hours: 6,
+  // Language of the device and feature names (Gladys does not tell a device
+  // integration the user's language).
+  language: DEFAULT_LANGUAGE,
 };
 
 /**
@@ -32,14 +29,15 @@ export const DEFAULT_CONFIG = {
  * @param {Record<string, unknown>} raw config returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const hours = Math.round(Number(raw.refresh_hours ?? DEFAULT_CONFIG.refresh_hours));
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    email: typeof raw.email === 'string' ? raw.email.trim() : DEFAULT_CONFIG.email,
+    password: typeof raw.password === 'string' ? raw.password : DEFAULT_CONFIG.password,
+    refresh_hours: Number.isFinite(hours)
+      ? Math.min(MAX_REFRESH_HOURS, Math.max(MIN_REFRESH_HOURS, hours))
+      : DEFAULT_CONFIG.refresh_hours,
+    language: LANGUAGES.includes(raw.language) ? raw.language : DEFAULT_CONFIG.language,
   };
 }
+
+export const hasCredentials = (config) => config.email !== '' && config.password !== '';

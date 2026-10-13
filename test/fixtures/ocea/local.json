@@ -1,0 +1,22 @@
+{
+  "fluidesRestitues": [
+    { "fluide": "EauFroide", "typeDistribution": "Individuelle", "typeReleve": "Radio" },
+    { "fluide": "EauChaude", "typeDistribution": "Individuelle", "typeReleve": "Radio" }
+  ],
+  "local": {
+    "adresse": {
+      "codePostal": "00000",
+      "complement": "",
+      "numeroRue": "1 rue de l'Exemple",
+      "pays": "France",
+      "ville": "Exempleville"
+    },
+    "batiment": "A",
+    "etage": "2",
+    "id": "00000000-0000-4000-8000-000000000001",
+    "identificationLocal": "LOT-0001",
+    "numeroPorte": "21",
+    "type": "Appartement",
+    "usage": "Habitation"
+  }
+}

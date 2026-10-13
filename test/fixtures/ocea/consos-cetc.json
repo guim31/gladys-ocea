@@ -1,0 +1,5 @@
+[
+  { "fluide": "EauFroide", "valeur": "12,34", "unite": "m3" },
+  { "fluide": "EauChaude", "valeur": "5,67", "unite": "m3" },
+  { "fluide": "CETC", "valeur": "89,01", "unite": "kWh" }
+]

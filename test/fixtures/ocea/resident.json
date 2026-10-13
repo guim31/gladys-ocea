@@ -1,0 +1,22 @@
+{
+  "codeClient": "CLIENT-0000",
+  "nomClient": "Résidence Exemple",
+  "notifications": [],
+  "occupations": [
+    {
+      "codeSite": "SITE-0001",
+      "dateDebut": "2019-09-01T00:00:00",
+      "dateFin": null,
+      "logementId": "00000000-0000-4000-8000-000000000001",
+      "residentId": "00000000-0000-4000-8000-0000000000aa",
+      "typeOccupation": "Locataire"
+    }
+  ],
+  "resident": {
+    "civilite": "M",
+    "email": "resident@example.com",
+    "id": "00000000-0000-4000-8000-0000000000aa",
+    "nom": "Exemple",
+    "prenom": "Camille"
+  }
+}

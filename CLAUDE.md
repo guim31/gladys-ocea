@@ -31,16 +31,20 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: builds the client, createApp(), connect()
+src/app.js                        every handler, the reading timer, publication of devices/states
+src/ocea/auth.js                  Azure AD B2C sign-in + refresh (port of ha_ocea_smart_building, MIT)
+src/ocea/client.js                resident API client, session (refresh token) under /data
+src/ocea/http.js                  cookie jar + manual redirects
+src/ocea/parse.js                 OCEA answers -> readings (fluid key, kind, unit, value)
+src/devices.js                    readings -> one Gladys device per dwelling
+src/history.js                    start-of-month indexes (widget)
+src/widgets.js                    dashboard widget handler (manifest `widgets`)
+src/i18n.js                       every container text, en/fr/de/es
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
+gladys-assistant-integration.json manifest: name, config_schema, actions, widgets...
 docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+test/                             node --test, SDK fake Gladys + test/helpers/fake-ocea.js
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -54,6 +58,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   manifest `config_schema`, `actions`, widget and scene keys, feature keys.
 - **The container rootfs is read-only.** Write only under `/data`, the one
   writable volume. Never log tokens, passwords or API keys.
+  Credentials also leak **form-encoded** (`a%40b.fr`) through the error
+  message of a failed request: `src/redact.js` masks the raw and encoded
+  forms, `test/secrets.test.js` checks it.
 - **Versions belong to the Release workflow** (Actions → Release). Never edit
   `version` in `package.json` or in the manifest, nor the `docker_image` tag,
   by hand — except on the README's hand-pushed tag path, which bumps all three
@@ -173,12 +180,35 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   est plafonné à un appel toutes les 10 s. Un toast d'action est tronqué à 200 caractères.
 - Le cœur met le contenu d'un widget en cache par (réglages, langue, unités) : pré-localiser
   d'après `language` est correct.
+
+**Suivi d'énergie et compteurs d'eau (vérifié sur la 5.1.4)**
+
+- Le cœur ne dérive la consommation par demi-heure et le coût **que** des index d'énergie
+  (`ENERGY_INDEX_FEATURE_TYPES` : `energy-sensor`/`index` ou `energy`, `switch`/`energy`, les index
+  `teleinformation`), dans `getDiscoveredDevices` (`addEnergyFeatures`). L'intégration publie l'index
+  seul, jamais les fonctionnalités dérivées. **Rien pour l'eau** : un `volume-sensor` n'a que le
+  graphique d'historique de sa fonctionnalité.
+- Un index d'énergie sans parent est **rattaché au compteur électrique principal** (s'il est défini) :
+  une énergie qui n'est pas de l'électricité (chaleur d'un CETC) s'additionne alors à l'électricité et
+  prend son tarif. L'utilisateur doit la passer sur « Aucun parent (racine) » dans Intégrations → Suivi
+  de l'énergie : le dire dans la doc.
+- Un index publié toutes les quelques heures fait tomber la consommation de ces heures dans **une seule
+  demi-heure** (le pipeline fait des deltas entre états). `publishEnergyConsumption` (relevés datés)
+  demande un cœur plus récent que la 5.1.4.
+- `counter-sensor` n'a pas de bloc de types dans `DEVICE_FEATURE_TYPES` du serveur, mais le cœur ne
+  valide que la liste aplatie des types : `counter-sensor`/`integer` passe, et le front le libelle
+  (« Compteur entier »). C'est la représentation honnête d'une valeur sans dimension (unités de
+  répartiteur de chauffage) : sans unité, hors suivi d'énergie.
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
 
 ## Store
 
+- Avant la première release, le validateur échoue sur un seul point, attendu : `docker_image` n'est
+  pas encore tirable (HTTP 403). Le reste doit être vert.
+- Le proxy des sessions de code refuse `forum.hacf.fr` et `community.gladysassistant.com` : les sujets
+  de forum ne se lisent pas depuis une session, les demander au mainteneur si besoin.
 - Validateur officiel, depuis la racine : `npx -y github:GladysAssistant/integration-store .`
   (schéma, `description` **100 caractères au plus par langue**, documentation de 300 caractères
   au moins, image Docker, cover de **150 Ko au plus**). Il demande Node ≥ 24 mais tourne sous
