@@ -119,10 +119,53 @@ test('a restart republishes the saved reading and waits for the interval', async
 test('a new reading interval reschedules the next reading', async (t) => {
   const { gladys, timers } = await setup(t);
   await gladys.connect();
-  await gladys.fake.configUpdated({ ...gladys.config, refresh_hours: 24 });
-  assert.deepEqual(timers.delays(), [24 * HOUR]);
+  await gladys.fake.configUpdated({ ...gladys.config, refresh_hours: 10 });
+  assert.deepEqual(timers.delays(), [10 * HOUR]);
+  // Past 12 hours the timer wakes up halfway to republish (see below).
   await gladys.fake.configUpdated({ ...gladys.config, refresh_hours: 99 });
-  assert.deepEqual(timers.delays(), [24 * HOUR], 'clamped to 24 hours');
+  assert.deepEqual(timers.delays(), [12 * HOUR], 'clamped to 24 hours, woken up at 12');
+});
+
+test('the container reads OCEA again on its own timer, onPoll never needed', async (t) => {
+  const { gladys, ocea, clock, timers } = await setup(t);
+  await gladys.connect();
+  const apiCalls = ocea.apiCalls().length;
+  ocea.consos[DWELLING_ID] = [{ fluide: 'EauFroide', valeur: '14', unite: 'm3' }];
+  clock.now += 6 * HOUR;
+  await timers.runAll();
+  assert.ok(ocea.apiCalls().length > apiCalls, 'OCEA read again');
+  assert.equal(gladys.fake.lastState(`${DEVICE_ID}:eaufroide`), 14);
+  assert.deepEqual(timers.delays(), [6 * HOUR], 'and the next reading is scheduled');
+});
+
+test('an unchanged value is sent again at least every 12 hours', async (t) => {
+  // Past 48 hours without a state, the front shows "no recent value".
+  for (const refreshHours of [6, 24]) {
+    const { gladys, ocea, clock, timers } = await setup(t, {
+      config: { refresh_hours: refreshHours },
+    });
+    await gladys.connect();
+    const sent = () =>
+      gladys.fake.states.filter((s) => s.device_feature_external_id === `${DEVICE_ID}:eaufroide`)
+        .length;
+    const readings = () => ocea.apiCalls().filter((c) => c.path === '/api/v1/resident').length;
+    const readingsBefore = readings();
+    let lastSentAt = clock.now;
+    const end = clock.now + 72 * HOUR;
+    while (clock.now < end) {
+      const [delay] = timers.delays();
+      assert.ok(delay <= 12 * HOUR, `${refreshHours} h: never sleeps more than 12 hours`);
+      const before = sent();
+      clock.now += delay;
+      await timers.runAll();
+      if (sent() > before) {
+        assert.ok(clock.now - lastSentAt <= 12 * HOUR, `${refreshHours} h: sent within 12 hours`);
+        lastSentAt = clock.now;
+      }
+    }
+    assert.equal(clock.now - lastSentAt, 0, `${refreshHours} h: sent at the last wake-up`);
+    assert.equal(readings() - readingsBefore, 72 / refreshHours, 'OCEA read only when due');
+  }
 });
 
 test('several dwellings get one device each, named after their address', async (t) => {

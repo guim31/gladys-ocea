@@ -8,6 +8,15 @@
 // Gladys polls at most once a minute, far too often for a cloud portal. The
 // last reading is kept under /data: a restart republishes it at once, and
 // only reads OCEA again when the interval has elapsed.
+//
+// An unchanged index is still sent to Gladys at least every 12 hours: past
+// 48 hours without a state, the front shows "no recent value". The timer
+// never sleeps longer than that, and wakes up only to republish when no
+// reading is due.
+//
+// Quiet logs: a normal reading writes at debug level only. Info keeps the
+// lifecycle (first reading, recovery) and the user's actions; a failure that
+// repeats is logged once, then once again when it recovers.
 // -----------------------------------------------------------------------------
 
 import { logger as sdkLogger } from '@gladysassistant/integration-sdk';
@@ -26,6 +35,12 @@ const HOUR_MS = 3600 * 1000;
 // After a failure (portal down, sign-in flow hiccup): try again sooner than
 // the normal interval, but never hammer the portal.
 export const RETRY_DELAY_MS = 30 * 60 * 1000;
+// The longest sleep of the timer, and so the longest gap between two
+// publications of an unchanged state.
+export const REPUBLISH_MS = 12 * HOUR_MS;
+// A state older than this is sent again with the next publication, so that
+// the reading or wake-up REPUBLISH_MS later always carries it.
+const STALE_MS = REPUBLISH_MS - HOUR_MS;
 
 const emptyState = () => ({ version: 1, account: null, lastRunAt: null, dwellings: {} });
 
@@ -46,6 +61,12 @@ export function createApp(gladys, deps = {}) {
   let state = emptyState();
   let stateLoaded = false;
   let timer = null;
+  // Last full publication of the states, on the injected clock.
+  let lastFullPublishAt = null;
+  // Logged once per streak, see logFailure.
+  let oceaFailure = null;
+  let gladysFailure = null;
+  let oceaReadOnce = false;
   let running = null;
   let stopped = false;
   // Credentials OCEA explicitly rejected: never retried on their own (a
@@ -99,16 +120,54 @@ export function createApp(gladys, deps = {}) {
     );
   }
 
+  // Only the changed states, except every STALE_MS: then all of them, so an
+  // index that does not move still has a recent value in Gladys.
   async function publishAll() {
     if (dwellingList().length === 0) {
       return;
     }
-    await gladys.publishDiscoveredDevices(buildDevices());
+    const devices = buildDevices();
+    await gladys.publishDiscoveredDevices(devices);
+    const full = lastFullPublishAt === null || now() - lastFullPublishAt >= STALE_MS;
+    if (full) {
+      for (const device of devices) {
+        gladys.forgetPublishedStates(device.external_id);
+      }
+    }
     await gladys.publishChangedStates(
       dwellingList().flatMap((dwelling) => buildStates(gladys, dwelling)),
     );
+    if (full) {
+      lastFullPublishAt = now();
+    }
+    gladysRecovered();
   }
 
+  // A failure is logged when it starts (or changes), then only at debug
+  // level until it recovers: a portal down for a day writes two lines, not
+  // one per attempt.
+  function logFailure(previous, kind, message, err) {
+    if (previous === kind) {
+      log.debug(message, err);
+    } else {
+      log.error(message, err);
+    }
+    return kind;
+  }
+
+  function gladysFailed(message, err) {
+    gladysFailure = logFailure(gladysFailure, 'gladys', message, err);
+  }
+
+  function gladysRecovered() {
+    if (gladysFailure) {
+      log.info('Publishing to Gladys works again');
+      gladysFailure = null;
+    }
+  }
+
+  // Next OCEA reading in delayMs. A longer delay than REPUBLISH_MS is cut
+  // into wake-ups that only republish the last reading.
   function schedule(delayMs) {
     if (timer) {
       timers.clearTimeout(timer);
@@ -117,20 +176,31 @@ export function createApp(gladys, deps = {}) {
     if (stopped || delayMs === null) {
       return;
     }
-    timer = timers.setTimeout(
-      () => {
+    const delay = Math.max(0, delayMs);
+    if (delay <= REPUBLISH_MS) {
+      timer = timers.setTimeout(() => {
         timer = null;
         return refresh().catch((err) => log.error('Scheduled OCEA reading failed', err));
-      },
-      Math.max(0, delayMs),
-    );
+      }, delay);
+      return;
+    }
+    timer = timers.setTimeout(async () => {
+      timer = null;
+      log.debug('Republishing the last reading');
+      try {
+        await publishAll();
+      } catch (err) {
+        gladysFailed('Publishing to Gladys failed', err);
+      }
+      schedule(delay - REPUBLISH_MS);
+    }, REPUBLISH_MS);
   }
 
   const intervalMs = () => config.refresh_hours * HOUR_MS;
 
   async function setStatus(connected, key) {
     await gladys.setConnectionStatus(connected, key ? tAll(key) : undefined).catch((err) => {
-      log.warn('Could not report the connection status', err);
+      gladysFailed('Could not report the connection status', err);
     });
   }
 
@@ -207,7 +277,13 @@ export function createApp(gladys, deps = {}) {
     try {
       result = await readOcea();
     } catch (err) {
-      log.error('OCEA reading failed', err);
+      const kind =
+        err instanceof OceaAuthError
+          ? err.invalidCredentials
+            ? 'status_invalid_credentials'
+            : 'status_auth_failed'
+          : 'status_api_failed';
+      oceaFailure = logFailure(oceaFailure, kind, 'OCEA reading failed', err);
       if (err instanceof OceaAuthError && err.invalidCredentials) {
         // Retrying the same password would only lock the account: wait for
         // the user to fix the configuration.
@@ -226,13 +302,22 @@ export function createApp(gladys, deps = {}) {
       await setStatus(false, result.status);
       return result;
     }
-    log.info(`OCEA read: ${result.dwellings} dwelling(s), ${result.meters} meter(s)`);
+    const summary = `${result.dwellings} dwelling(s), ${result.meters} meter(s)`;
+    if (oceaFailure) {
+      log.info(`OCEA reachable again: ${summary}`);
+    } else if (!oceaReadOnce) {
+      log.info(`Connected to OCEA: ${summary}`);
+    } else {
+      log.debug(`OCEA read: ${summary}`);
+    }
+    oceaFailure = null;
+    oceaReadOnce = true;
     schedule(intervalMs());
     try {
       await publishAll();
     } catch (err) {
       // Gladys unreachable: the readings are saved, they go out on reconnection.
-      log.error('Publishing to Gladys failed', err);
+      gladysFailed('Publishing to Gladys failed', err);
     }
     await setStatus(true);
     gladys.requestWidgetRefresh(WIDGET_KEY);
@@ -250,7 +335,7 @@ export function createApp(gladys, deps = {}) {
     try {
       await publishAll();
     } catch (err) {
-      log.error('Publishing to Gladys failed', err);
+      gladysFailed('Publishing to Gladys failed', err);
     }
     if (!hasCredentials(config)) {
       return refresh();
@@ -281,6 +366,7 @@ export function createApp(gladys, deps = {}) {
     config = normalizeConfig(newConfig);
     const credentialsChanged =
       previous.email !== config.email || previous.password !== config.password;
+    log.info(`Configuration saved${credentialsChanged ? ', new credentials' : ''}`);
     if (credentialsChanged) {
       await start({ readNow: true });
       return;
@@ -296,6 +382,7 @@ export function createApp(gladys, deps = {}) {
   });
 
   gladys.onScanRequest(async () => {
+    log.info('Scan requested');
     await loadState();
     if (dwellingList().length === 0) {
       await refresh();
@@ -311,6 +398,7 @@ export function createApp(gladys, deps = {}) {
     if (!dwelling) {
       return;
     }
+    log.info('Device added in Gladys: its states are sent again');
     gladys.forgetPublishedStates(device.external_id);
     await gladys.publishChangedStates(buildStates(gladys, dwelling));
     gladys.requestWidgetRefresh(WIDGET_KEY);
@@ -327,6 +415,7 @@ export function createApp(gladys, deps = {}) {
 
   gladys.onAction('test_connection', async () => {
     // A deliberate tap: tries again even credentials OCEA rejected before.
+    log.info('Test action: reading OCEA now');
     const result = await refresh({ force: true });
     if (result.ok) {
       return tAll('action_ok', { dwellings: result.dwellings, meters: result.meters });
