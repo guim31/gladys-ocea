@@ -1,0 +1,4 @@
+[
+  { "fluide": "EauFroide", "valeur": "123,456", "unite": "m3" },
+  { "fluide": "EauChaude", "valeur": "45,678", "unite": "m3" }
+]

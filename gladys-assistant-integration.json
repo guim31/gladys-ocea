@@ -1,177 +1,174 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "OCEA Smart Building",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Cold water, hot water and heating readings of your OCEA resident portal.",
+    "fr": "Relevés d'eau froide, d'eau chaude et de chauffage de votre espace résident OCEA.",
+    "de": "Kaltwasser-, Warmwasser- und Heizungsablesungen deines OCEA-Bewohnerportals.",
+    "es": "Lecturas de agua fría, agua caliente y calefacción de su espacio de residente OCEA."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-ocea:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-ocea/main/cover.png",
+  "categories": ["energy"],
+  "transports": ["cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your OCEA resident account",
+        "fr": "Votre compte résident OCEA",
+        "de": "Dein OCEA-Bewohnerkonto",
+        "es": "Su cuenta de residente OCEA"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Use the e-mail and password of the OCEA Smart Building resident portal. Your dwellings are detected from the account. The meters report a few times a day: the integration reads the portal every few hours. Not affiliated with OCEA Smart Building.",
+        "fr": "Utilisez l'e-mail et le mot de passe de l'espace résident OCEA Smart Building. Vos logements sont détectés depuis le compte. Les compteurs remontent quelques fois par jour : l'intégration lit le portail toutes les quelques heures. Sans lien avec OCEA Smart Building.",
+        "de": "Verwende die E-Mail-Adresse und das Passwort des OCEA-Smart-Building-Bewohnerportals. Deine Wohnungen werden aus dem Konto erkannt. Die Zähler melden sich einige Male am Tag: Die Integration liest das Portal alle paar Stunden. Nicht mit OCEA Smart Building verbunden.",
+        "es": "Utilice el correo electrónico y la contraseña del espacio de residente OCEA Smart Building. Sus viviendas se detectan a partir de la cuenta. Los contadores informan unas pocas veces al día: la integración lee el portal cada pocas horas. Sin relación con OCEA Smart Building."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://espace-resident.ocea-sb.com",
+          "label": {
+            "en": "OCEA resident portal",
+            "fr": "Espace résident OCEA",
+            "de": "OCEA-Bewohnerportal",
+            "es": "Espacio de residente OCEA"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "email",
+      "type": "string",
+      "label": {
+        "en": "E-mail",
+        "fr": "E-mail",
+        "de": "E-Mail-Adresse",
+        "es": "Correo electrónico"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "placeholder": {
+        "en": "you@example.com",
+        "fr": "vous@exemple.fr",
+        "de": "du@beispiel.de",
+        "es": "usted@ejemplo.es"
+      },
+      "required": true
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "required": true
     },
     {
-      "key": "unit",
+      "key": "refresh_hours",
+      "type": "number",
+      "label": {
+        "en": "Reading interval (hours)",
+        "fr": "Intervalle de relevé (heures)",
+        "de": "Ableseintervall (Stunden)",
+        "es": "Intervalo de lectura (horas)"
+      },
+      "description": {
+        "en": "How often the OCEA portal is read, from 1 to 24 hours. The meters only report a few times a day.",
+        "fr": "Fréquence de lecture du portail OCEA, de 1 à 24 heures. Les compteurs ne remontent que quelques fois par jour.",
+        "de": "Wie oft das OCEA-Portal gelesen wird, von 1 bis 24 Stunden. Die Zähler melden sich nur einige Male am Tag.",
+        "es": "Frecuencia de lectura del portal OCEA, de 1 a 24 horas. Los contadores solo informan unas pocas veces al día."
+      },
+      "required": false,
+      "default": 6,
+      "min": 1,
+      "max": 24
+    },
+    {
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "label": {
+        "en": "Language of the device names",
+        "fr": "Langue des noms d'appareils",
+        "de": "Sprache der Gerätenamen",
+        "es": "Idioma de los nombres de dispositivos"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Used for the names of the meters when the device is added to Gladys.",
+        "fr": "Utilisée pour le nom des compteurs quand l'appareil est ajouté à Gladys.",
+        "de": "Wird für die Namen der Zähler verwendet, wenn das Gerät zu Gladys hinzugefügt wird.",
+        "es": "Se utiliza para los nombres de los contadores cuando el dispositivo se añade a Gladys."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection and read now",
+        "fr": "Tester la connexion et relever",
+        "de": "Verbindung testen und jetzt ablesen",
+        "es": "Probar la conexión y leer ahora"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
+      "timeout_seconds": 90
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "ocea_consumption",
+      "label": {
+        "en": "OCEA consumption",
+        "fr": "Consommation OCEA",
+        "de": "OCEA-Verbrauch",
+        "es": "Consumo OCEA"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Water and heating consumption of the current month, per fluid.",
+        "fr": "Consommation d'eau et de chauffage du mois en cours, par fluide.",
+        "de": "Wasser- und Heizungsverbrauch des laufenden Monats, je Medium.",
+        "es": "Consumo de agua y calefacción del mes en curso, por fluido."
+      },
+      "icon": "droplet",
+      "settings": [
+        {
+          "key": "dwelling",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Dwelling",
+            "fr": "Logement",
+            "de": "Wohnung",
+            "es": "Vivienda"
+          },
+          "required": true
+        }
+      ]
     }
   ]
 }

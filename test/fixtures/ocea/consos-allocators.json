@@ -1,0 +1,4 @@
+[
+  { "fluide": "EauFroide", "valeur": "30,5", "unite": "m3" },
+  { "fluide": "RepartiteurFraisChauffage", "valeur": "1 234", "unite": "unités" }
+]
