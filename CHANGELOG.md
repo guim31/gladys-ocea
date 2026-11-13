@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-11-13
+
 ### Changed
 
 - Declared for France only (`countries: ["FR"]`): the Gladys catalog of an
@@ -48,6 +50,7 @@ the notes of the version's GitHub Release.
   month, per fluid.
 - Texts in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-ocea/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/guim31/gladys-ocea/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/guim31/gladys-ocea/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/guim31/gladys-ocea/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/guim31/gladys-ocea/releases/tag/v1.0.1
