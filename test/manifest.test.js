@@ -143,3 +143,8 @@ test('field placeholders are multi-language objects', () => {
     assert.ok(f.placeholder.en);
   }
 });
+
+test('the catalog countries: France, which needs Gladys >= 5.3.0', () => {
+  assert.deepEqual(manifest.countries, ['FR']);
+  assert.match(manifest.gladys_version, /^>=\s*5\.3\.0$/, 'countries needs Gladys 5.3.0');
+});
